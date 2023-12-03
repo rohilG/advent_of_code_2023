@@ -16,40 +16,83 @@ def getNum(i,j):
 
     return "".join(num)
 
-def rowHasStar(numLen,i,j):
-    for rowInd in range(j-1, j + numLen + 1):
-        if rowInd >= 0 and rowInd < len(dat[0]):
-            if dat[i][rowInd].isdigit() == False and dat[i][rowInd] != ".":
-                return True
+def getRowGearRatio(i,j):
+    initJ = j
 
-    return False
+    if j-1 >= 0 and dat[i][j-1].isdigit():
+        while j-1 >= 0 and dat[i][j-1].isdigit():
+            j -= 1
 
-def isPartNumber(numLen,i,j):
-    if i-1 >= 0 and rowHasStar(numLen,i-1,j):
-        return True
+        num = getNum(i,j)
+        
+        if j + len(num) > initJ:
+            return (1,int(num))
 
-    if rowHasStar(numLen,i,j):
-        return True
+        # otherwise there's a POTENTIAL second num starting from initJ + 1
+        if initJ+1 < len(dat[0]) and dat[i][initJ+1].isdigit():
+            return (2,int(num)*int(getNum(i,initJ+1)))
 
-    if i+1 < len(dat) and rowHasStar(numLen,i+1,j):
-        return True
+        return (True,int(num))
 
-    return False
+    if dat[i][j].isdigit():
+        return (1,int(getNum(i,j)))
+
+    if j+1 < len(dat[0]) and dat[i][j+1].isdigit():
+        return (1, int(getNum(i,j+1)))
+
+    return (0, 1)
+
+
+def getGearRatio(i,j):
+    gearRatio = 1
+    totalNumSeenNums = 0
+
+    if i-1 >= 0: 
+        numSeenNums, multipliedNums = getRowGearRatio(i-1,j)
+        totalNumSeenNums += numSeenNums
+        gearRatio *= multipliedNums
+
+    # same row to gear's left
+    if j-1 >= 0 and dat[i][j-1].isdigit():
+        totalNumSeenNums += 1
+        if (totalNumSeenNums > 2):
+            return (False, gearRatio)
+
+        rowInd = j-1
+        num = []
+        while rowInd >= 0 and dat[i][rowInd].isdigit():
+            num.append(dat[i][rowInd])
+            rowInd -= 1
+
+        gearRatio *= int("".join(num[::-1]))
+
+    # same row to gear's right
+    if j+1 < len(dat[0]) and dat[i][j+1].isdigit():
+        totalNumSeenNums += 1
+        if totalNumSeenNums > 2:
+            return (False, gearRatio)
+
+        gearRatio *= int(getNum(i,j+1))
+
+    if i+1 < len(dat):
+        numSeenNums, multipliedNums = getRowGearRatio(i+1,j)
+        totalNumSeenNums += numSeenNums
+        if totalNumSeenNums > 2:
+            return (False, 0)
+        gearRatio *= multipliedNums
+
+    if totalNumSeenNums == 2:
+        return (True, gearRatio)
+    return (False, 0)
 
 while i < len(dat):
     j = 0
     while j < len(dat[0]):
-        if dat[i][j].isdigit():
-            num = getNum(i,j)
-            print(num)
-
-            if isPartNumber(len(num), i,j):
-                total += int(num)
-
-            while j < len(dat[0]) and dat[i][j].isdigit():
-                j += 1
-            j -=1
-
+        if dat[i][j] == "*":
+            isGear, multipliedNums = getGearRatio(i,j)
+            if isGear:
+                total += multipliedNums
+            
         j += 1
     i += 1
 
